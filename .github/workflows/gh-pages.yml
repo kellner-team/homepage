@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: setup node and pnpm
-        uses: dafnik/setup-node-pnpm@v4
+        uses: dafnik/setup-node-pnpm@v5
         with:
           install: true
 
@@ -33,7 +33,7 @@ jobs:
 
       - name: Upload artifact
         id: deployment
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist/
           retention-days: 1
