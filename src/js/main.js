@@ -18,8 +18,23 @@ $(function () {
     }
   });
 
+  // The Turnstile script is loaded with `defer`, so it has run before jQuery's ready callback fires.
+  // It is undefined when blocked (e.g. by an ad blocker), which must not break the rest of the page.
+  const turnstileWidgetId = window.turnstile?.render('#contactTurnstile', {
+    sitekey: '0x4AAAAAAFNY7sLPv7RWf_mP',
+    action: 'contact',
+  });
+
   $('form#contactForm').submit(function (event) {
     event.preventDefault();
+
+    const turnstileToken = window.turnstile?.getResponse(turnstileWidgetId);
+    if (!turnstileToken) {
+      alert(
+        'Die Sicherheitsüberprüfung ist noch nicht abgeschlossen. Bitte warte kurz oder schreibe direkt eine E-Mail an support@kellner.team',
+      );
+      return;
+    }
 
     let formData = {
       name: $('#contactName').val(),
@@ -27,6 +42,7 @@ $(function () {
       phoneNumber: $('#contactPhone').val(),
       topic: $('#contactTopic').val(),
       message: $('#contactMessage').val(),
+      turnstileToken: turnstileToken,
     };
 
     $.ajax({
@@ -45,6 +61,10 @@ $(function () {
         alert(
           'Etwas ist schief gelaufen. Bitte versuche es erneut, oder schreibe direkt eine E-Mail an support@kellner.team',
         );
+      })
+      .always(function () {
+        // Tokens are single-use, a retry or follow-up message needs a fresh one
+        window.turnstile.reset(turnstileWidgetId);
       });
   });
 
