@@ -18,17 +18,25 @@ $(function () {
     }
   });
 
-  // The Turnstile script is loaded with `defer`, so it has run before jQuery's ready callback fires.
-  // It is undefined when blocked (e.g. by an ad blocker), which must not break the rest of the page.
-  const turnstileWidgetId = window.turnstile?.render('#contactTurnstile', {
-    sitekey: '0x4AAAAAAFNY7sLPv7RWf_mP',
-    action: 'contact',
-  });
+  // Loaded from here instead of a <script> tag, since jQuery's ready callback can run before a
+  // deferred script has executed. Stays undefined when the script is blocked (e.g. by an ad blocker).
+  let turnstileWidgetId;
+  if (document.querySelector('#contactTurnstile')) {
+    const turnstileScript = document.createElement('script');
+    turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    turnstileScript.onload = function () {
+      turnstileWidgetId = turnstile.render('#contactTurnstile', {
+        sitekey: '0x4AAAAAAFNY7sLPv7RWf_mP',
+        action: 'contact',
+      });
+    };
+    document.head.appendChild(turnstileScript);
+  }
 
   $('form#contactForm').submit(function (event) {
     event.preventDefault();
 
-    const turnstileToken = window.turnstile?.getResponse(turnstileWidgetId);
+    const turnstileToken = turnstileWidgetId && turnstile.getResponse(turnstileWidgetId);
     if (!turnstileToken) {
       alert(
         'Die Sicherheitsüberprüfung ist noch nicht abgeschlossen. Bitte warte kurz oder schreibe direkt eine E-Mail an support@kellner.team',
@@ -64,7 +72,7 @@ $(function () {
       })
       .always(function () {
         // Tokens are single-use, a retry or follow-up message needs a fresh one
-        window.turnstile.reset(turnstileWidgetId);
+        turnstile.reset(turnstileWidgetId);
       });
   });
 
